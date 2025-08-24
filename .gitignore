@@ -54,7 +54,7 @@ app.*.map.json
 .env.production
 
 # APK files
-# *.apk (keeping Bix-App.apk for distribution)
+*.apk
 *.aab
 
 # Exclude Flutter SDK and other repos
