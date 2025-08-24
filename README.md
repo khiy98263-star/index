@@ -147,9 +147,11 @@ flutter build apk --release
 
 ## الملفات المهمة
 
-- **APK الجاهز**: `/workspace/project/Bix-App.apk` (55.3 MB)
-- **المشروع الكامل**: `/workspace/project/bix/`
-- **إعدادات Firebase**: `android/app/google-services.json`
+- **المشروع الكامل**: `bix/` (مجلد التطبيق الرئيسي)
+- **إعدادات Firebase**: `bix/android/app/google-services.json`
+- **APK الجاهز**: يمكن بناؤه باستخدام `flutter build apk --release` (حجم متوقع: ~55 MB)
+
+> **ملاحظة**: تم استبعاد ملف APK من Git لتوفير مساحة التخزين. يمكن بناء التطبيق محلياً باستخدام الأوامر المذكورة في قسم "التثبيت والتشغيل".
 
 ## المميزات المتقدمة
 
