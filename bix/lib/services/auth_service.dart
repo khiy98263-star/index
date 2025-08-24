@@ -82,9 +82,10 @@ class AuthService {
     }
   }
 
-  // Sign in as guest
+  // Sign in as guest - works offline without Firebase connection
   Future<UserCredential?> signInAsGuest() async {
     try {
+      // Try Firebase anonymous login first
       UserCredential result = await _auth.signInAnonymously();
       
       if (result.user != null) {
@@ -93,8 +94,26 @@ class AuthService {
       }
 
       return result;
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+    } catch (e) {
+      print('Firebase guest login failed, using offline mode: $e');
+      // Return null to indicate offline guest mode
+      return null;
+    }
+  }
+
+  // Check if user is in guest mode (offline or anonymous)
+  bool isGuestMode() {
+    return _auth.currentUser?.isAnonymous == true || _auth.currentUser == null;
+  }
+
+  // Create offline guest session
+  Future<bool> createOfflineGuestSession() async {
+    try {
+      // This will be handled by the provider to create a local guest session
+      return true;
+    } catch (e) {
+      print('Failed to create offline guest session: $e');
+      return false;
     }
   }
 

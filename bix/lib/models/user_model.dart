@@ -15,6 +15,9 @@ class UserModel {
   final int postsCount;
   final bool isVerified;
   final bool isPrivate;
+  
+  // Getter for backward compatibility
+  String get photoURL => profileImageUrl ?? '';
 
   UserModel({
     required this.uid,

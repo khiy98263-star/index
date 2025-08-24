@@ -12,12 +12,14 @@ class AuthProvider with ChangeNotifier {
   UserModel? _userModel;
   bool _isLoading = false;
   String? _error;
+  bool _isGuestMode = false;
 
   User? get user => _user;
   UserModel? get userModel => _userModel;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated => _user != null || _isGuestMode;
+  bool get isGuestMode => _isGuestMode;
 
   AuthProvider() {
     _initializeAuth();
@@ -92,9 +94,42 @@ class AuthProvider with ChangeNotifier {
     _clearError();
 
     try {
-      await _authService.signInAsGuest();
+      UserCredential? result = await _authService.signInAsGuest();
+      if (result == null) {
+        // Firebase failed, use offline guest mode
+        _isGuestMode = true;
+        _userModel = UserModel(
+          uid: 'guest_${DateTime.now().millisecondsSinceEpoch}',
+          username: 'guest_user',
+          email: 'guest@bix.app',
+          displayName: 'ضيف',
+          profileImageUrl: '',
+          bio: 'مستخدم ضيف',
+          followers: [],
+          following: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          isVerified: false,
+        );
+        await _saveGuestToPrefs();
+      }
     } catch (e) {
-      _setError(e.toString());
+      // Fallback to offline guest mode
+      _isGuestMode = true;
+      _userModel = UserModel(
+        uid: 'guest_${DateTime.now().millisecondsSinceEpoch}',
+        username: 'guest_user',
+        email: 'guest@bix.app',
+        displayName: 'ضيف',
+        profileImageUrl: '',
+        bio: 'مستخدم ضيف',
+        followers: [],
+        following: [],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        isVerified: false,
+      );
+      await _saveGuestToPrefs();
     } finally {
       _setLoading(false);
     }
@@ -105,7 +140,13 @@ class AuthProvider with ChangeNotifier {
     _clearError();
 
     try {
-      await _authService.signOut();
+      if (_isGuestMode) {
+        _isGuestMode = false;
+        _userModel = null;
+        await _clearUserFromPrefs();
+      } else {
+        await _authService.signOut();
+      }
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -167,12 +208,24 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> _saveGuestToPrefs() async {
+    if (_userModel != null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(AppConstants.userIdKey, _userModel!.uid);
+      await prefs.setString(AppConstants.usernameKey, _userModel!.username);
+      await prefs.setString(AppConstants.emailKey, _userModel!.email);
+      await prefs.setBool(AppConstants.isLoggedInKey, true);
+      await prefs.setBool('isGuestMode', true);
+    }
+  }
+
   Future<void> _clearUserFromPrefs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.userIdKey);
     await prefs.remove(AppConstants.usernameKey);
     await prefs.remove(AppConstants.emailKey);
     await prefs.setBool(AppConstants.isLoggedInKey, false);
+    await prefs.remove('isGuestMode');
   }
 
   void _setLoading(bool loading) {
